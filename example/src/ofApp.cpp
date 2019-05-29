@@ -8,36 +8,68 @@ void ofApp::setup() {
 
 	// Setup params 
 	RUI_SETUP();
-    // load params
+    // Load params
     mapper.setupParams();
 	RUI_LOAD_FROM_XML();
 
-    // setup the mapper
+    // Setup the mapper
     mapper.setup();
 
+	// Load the substrate
+	mapper.loadSubstratePlan("substrate.plan");
+
+	cam.setNearClip(0.001);
+	cam.setFarClip(10000);
+	cam.setPosition(1, 0.3, 0.4);
+	cam.lookAt(glm::vec3(0, 0.327, 0.2835), glm::vec3(0, 0, 1));
+
+	light.setup();
+	light.setGlobalPosition(glm::vec3(100, -100, 100));
+	light.setPointLight();
+	light.enable();
+	light.setAttenuation(1.25);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     
     // Get the 3D point
-    glm::vec3 pt = glm::vec3(0.5, 0.5, 0.5);
+    glm::vec3 pt = glm::vec3(0, float(ofGetMouseX())/float(ofGetWidth()), 1.0 - float(ofGetMouseY())/float(ofGetHeight()));
     
     // Map this 3D point to the chosen surface
-    glm::vec3 ptMapped = mapper.getSurfacePoint(pt);
-    glm::vec2 ptParams = mapper.getSurfaceParams(pt);
-    
-    
-
+	glm::vec3 closestPoint;
+	glm::vec2 surfaceParam;
+	mapper.getNearest(pt, closestPoint, surfaceParam);
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
 
-	ofBackground(200);
+	ofBackground(255);
 
-    mapper.drawDebug();
-    
+	mapper.render();
+
+	cam.begin();
+	ofEnableDepthTest();
+	ofEnableAlphaBlending();
+	ofEnableLighting();
+
+	light.draw();
+
+	mapper.drawDebug();
+
+	//ofLogNotice() << "Mesh info";
+	//ofLogNotice() << "\tverts:  " << mapper.getSurface().getNumVertices();
+	//ofLogNotice() << "\tcolors: " << mapper.getSurface().getNumColors();
+	//ofLogNotice() << "\tnorms:  " << mapper.getSurface().getNumNormals();
+	//ofLogNotice() << "\tindcs:  " << mapper.getSurface().getNumIndices();
+	//ofLogNotice() << "\tindcs:  " << mapper.getSurface().getNumTexCoords();
+
+	ofDisableDepthTest();
+	ofDisableAlphaBlending();
+	ofDisableLighting();
+	cam.end();
+
 }
 
 //--------------------------------------------------------------

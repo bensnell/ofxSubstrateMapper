@@ -22,12 +22,11 @@ void ofxSubstrateMapper::setupParams() {
 void ofxSubstrateMapper::setup() {
 
 
+	canvas.allocate(100, 100, GL_RGBA);
+	canvas.begin();
+	ofClear(255, 255, 255, 255);
+	canvas.end();
 
-}
-
-// --------------------------------------------------------------
-void ofxSubstrateMapper::update() {
-	
 }
 
 // --------------------------------------------------------------
@@ -39,7 +38,7 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 	}
 
 	// Validate the file
-	ofFile file(ofToDataPath(tpFilename));
+	ofFile file(ofToDataPath(spFilename));
 	if (!file.exists()) {
 		ofLogError("ofxSubstrateMapper") << "Substrate Plan file " << spFilename << " does not exist. Exiting";
 		return;
@@ -69,20 +68,20 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 	}
     for (int i = 0; i < js["substrate_heights"].size(); i++) {
         if (!js["substrate_heights"][i].contains("param")) {
-            ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"param\"".
+			ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"param\"";
             return;
         }
         if (i != 0 && js["substrate_heights"][i]["param"] < js["substrate_heights"][i-1]["param"]) {
-            ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be listed in increasing order."
+			ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be listed in increasing order.";
             return;
         }
         if (js["substrate_heights"][i]["param"] < 0.0 || js["substrate_heights"][i]["param"] > 1.0) {
-            ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be between 0 and 1."
+			ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be between 0 and 1.";
             return;
         }
         
         if (!js["substrate_heights"][i].contains("bounds")) {
-            ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"bounds\"".
+			ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"bounds\"";
             return;
         }
         if (js["substrate_heights"][i]["bounds"].size() != 2) {
@@ -92,48 +91,275 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
     }
 
 	// Load the file's contents
-    
-    
-//    vector<glm::vec3> _targets;
-//    vector<int> _square;
-//    // Load the targets
-//    for (int i = 0; i < js["calibration_targets"].size(); i++) {
-//        _targets.push_back(glm::vec3(
-//            js["calibration_targets"][i][0],
-//            js["calibration_targets"][i][1],
-//            js["calibration_targets"][i][2]));
-//    }
-//    // Load the square
-//    for (int i = 0; i < 3; i++) {
-//        int index = js["calibration_square"][i];
-//        if (index < 0 || index >= _targets.size()) {
-//            ofLogError("ofxSubstrateMapper") << "Target Plan file is invalid. Square index is incorrect. Exiting";
-//            return;
-//        }
-//        _square.push_back(index);
-//    }
-//
-//    ofLogNotice("ofxSubstrateMapper") << "Successfully loaded Target Plan file \"" << tpFilename << "\"";
-//
-//    // Save these targets if all is successful
-//    realTargets = _targets;
-//    square = _square;
+	ofPolyline _outline;
+	vector<HeightParam> _heights;
+	// Load the line
+	for (int i = 0; i < js["substrate_outline"].size(); i++) {
+		_outline.addVertex(js["substrate_outline"][i][0], js["substrate_outline"][i][1]);
+	}
+	// Load the heights
+	for (int i = 0; i < js["substrate_heights"].size(); i++) {
+		HeightParam p;
+		p.param = js["substrate_heights"][i]["param"];
+		p.height = glm::vec2(js["substrate_heights"][i]["bounds"][0], js["substrate_heights"][i]["bounds"][1]);
+		_heights.push_back(p);
+	}
+
+	ofLogNotice("ofxSubstrateMapper") << "Successfully loaded Substrate Plan file \"" << spFilename << "\"";
+
+	// Save the values
+	outline = _outline;
+	heights = _heights;
+
+	// Generate the mesh
+	surface.clear();
+	surface.setMode(ofPrimitiveMode::OF_PRIMITIVE_TRIANGLE_STRIP);
+	// Create a temporary line to create the mesh
+	ofPolyline tmp = outline;
+	// Insert vertices into the outline for all params in the heights
+	for (int i = 0; i < heights.size(); i++) {
+		float indexInterp = tmp.getIndexAtPercent(heights[i].param);
+		if (abs(float(round(indexInterp)) - indexInterp) > 0.001) {
+			// Add a new vertex
+			tmp.insertVertex(tmp.getPointAtIndexInterpolated(indexInterp), int(ceil(indexInterp)));
+		}
+	}
+	// For every point in the outline, add triangles to the mesh
+	//	1__3
+	//	|\ | . . .
+	//	|_\|
+	//  0  2
+	//surface.enableColors();
+	surface.enableNormals();
+	surface.enableTextures();
+	for (int i = 0; i < tmp.size(); i++) {
+		
+		float percent = tmp.getLengthAtIndex(i) / tmp.getPerimeter();
+		glm::vec2 ht = getInterpolatedHeight(&heights, percent);
+
+		// Add the bottom height
+		glm::vec3 lo = tmp.getVertices()[i];
+		lo.z = ht[0];
+		surface.addVertex(lo);
+		//surface.addColor(ofColor(255));
+		surface.addTexCoord(glm::vec2(percent, 0));
+
+		// Add the top height
+		glm::vec3 hi = tmp.getVertices()[i];
+		hi.z = ht[1];
+		surface.addVertex(hi);
+		//surface.addColor(ofColor(255));
+		surface.addTexCoord(glm::vec2(percent, 1));
+	}
+	// Now add normals
+	for (int i = 0; i < surface.getVertices().size(); i+=2) {
+
+		// Lower normal
+		int lastLo = CLAMP(i - 2, 0, surface.getVertices().size() - 2);
+		int thisLo = i;
+		int nextLo = CLAMP(i + 2, 0, surface.getVertices().size() - 2);
+
+		// Upper normal
+		int lastHi = lastLo + 1;
+		int thisHi = thisLo + 1;
+		int nextHi = nextLo + 1;
+
+		surface.addNormal(glm::normalize(glm::cross(
+			surface.getVertex(nextLo) - surface.getVertex(lastLo), 
+			surface.getVertex(thisHi) - surface.getVertex(thisLo))));
+		surface.addNormal(glm::normalize(glm::cross(
+			surface.getVertex(lastHi) - surface.getVertex(nextHi),
+			surface.getVertex(thisLo) - surface.getVertex(thisHi))));
+	}
+
+
+	//surface = ofSpherePrimitive(1, 12).getMesh(); // debug
+	//surface = ofBoxPrimitive(0.5, 0.5, 0.5).getMesh();
+
+	// Allocate an fbo of the correct size
+	if (heights.size() != 0) {
+		float rangeWidth = outline.getPerimeter();
+		float minH = FLT_MAX;
+		float maxH = FLT_MIN;
+		for (int i = 0; i < heights.size(); i++) {
+			if (heights[i].height[0] < minH) minH = heights[i].height[0];
+			if (heights[i].height[0] > maxH) maxH = heights[i].height[0];
+			if (heights[i].height[1] < minH) minH = heights[i].height[1];
+			if (heights[i].height[1] > maxH) maxH = heights[i].height[1];
+		}
+		float rangeHeight = maxH - minH;
+		int pxWidth, pxHeight;
+		if (rangeWidth > rangeHeight) {
+			pxWidth = maxRenderingDimension;
+			pxHeight = max(1, int(rangeHeight * float(pxWidth) / rangeWidth));
+		}
+		else {
+			pxHeight = maxRenderingDimension;
+			pxWidth = max(1, int(rangeWidth * float(pxHeight) / rangeHeight));
+		}
+		canvas.allocate(pxWidth, pxHeight, GL_RGBA);
+		canvas.begin();
+		ofClear(255, 255, 255, 255);
+		canvas.end();
+	}
+
+	bSubstrateLoaded = true;
+}
+
+// --------------------------------------------------------------
+void ofxSubstrateMapper::render() {
+
+	// Render the last target
+	canvas.begin();
+	
+	ofPushMatrix();
+	ofSetColor(255, 0, 0, 255);
+	ofDrawCircle(lastOutParam[0] * float(canvas.getWidth()), lastOutParam[1] * float(canvas.getHeight()), maxRenderingDimension/100);
+	ofSetColor(255, 255, 255, 255);
+	ofPopMatrix();
+
+	//ofClearAlpha();
+	canvas.end();
+
 }
 
 // --------------------------------------------------------------
 void ofxSubstrateMapper::drawDebug(int x, int y) {
     if (!isSubstratePlanLoaded()) return;
-    
-    
 
+	ofPushMatrix();
+	ofPushStyle();
 	
+	ofEnableNormalizedTexCoords();
+	//ofDisableArbTex();
+
+	canvas.getTexture().bind();
+	surface.drawFaces();
+	//ofDrawBox(0.5);
+	canvas.getTexture().unbind();
+
+	//ofSetColor(255, 0, 0);
+	//ofDrawSphere(lastSurfacePoint, 10);
+
+	ofPopStyle();
+	ofPopMatrix();
+
 }
 
 // --------------------------------------------------------------
 bool ofxSubstrateMapper::isSubstratePlanLoaded() {
-
-
+	return bSubstrateLoaded;
 }
+
+// --------------------------------------------------------------
+glm::vec2 ofxSubstrateMapper::getInterpolatedHeight(vector<HeightParam>* heights, float param) {
+	if (heights->size() == 0) return glm::vec2(0,0);
+	if (heights->size() == 1) return (*heights)[0].height;
+	param = CLAMP(param, 0.0, 1.0);
+
+	// Find the lo and hi index bounds
+	int lo = 0;
+	int hi = 1;
+	while (hi < (heights->size()-1) && param > (*heights)[hi].param) {
+		lo++;
+		hi++;
+	}
+
+	// Map the param to the heights
+	glm::vec2 outHeight;
+	outHeight[0] = ofMap(param, (*heights)[lo].param, (*heights)[hi].param, (*heights)[lo].height[0], (*heights)[hi].height[0], true);
+	outHeight[1] = ofMap(param, (*heights)[lo].param, (*heights)[hi].param, (*heights)[lo].height[1], (*heights)[hi].height[1], true);
+	return outHeight;
+}
+
+// --------------------------------------------------------------
+void ofxSubstrateMapper::getNearest(glm::vec3 inPoint, glm::vec3& outPoint, glm::vec2& outParam) {
+	if (!isSubstratePlanLoaded()) return;
+
+	// Find the closest point on the outline
+	float percent;
+	float indexInterp;
+	getClosestPoint(inPoint, outline, outPoint, percent, indexInterp);
+	// ^ only the x,y coordinates matter here, since the outline is in 2D
+	// Set the U param
+	outParam[0] = percent;
+
+	// Now, find the height
+	glm::vec2 heightBounds = getInterpolatedHeight(&heights, percent);
+	float z = CLAMP(inPoint.z, heightBounds[0], heightBounds[1]);
+	// Set the height
+	outPoint.z = z;
+	// Set the V param
+	outParam[1] = ofMap(inPoint.z, heightBounds[0], heightBounds[1], 0.0, 1.0, true);
+
+	lastInPoint = inPoint;
+	lastOutPoint = outPoint;
+	lastOutParam = outParam;
+}
+
+// --------------------------------------------------------------
+void ofxSubstrateMapper::getClosestPoint(glm::vec3& inPoint, ofPolyline& inOutline, glm::vec3& outPoint, float& outPercent, float& outIndexInterp) {
+	if (inOutline.size() <= 1) return;
+
+	// Find the closest vertex
+	unsigned int* nearestIndex = new unsigned int;
+	outPoint = inOutline.getClosestPoint(inPoint, nearestIndex);
+
+	// Determine the intepolated index
+	int loIndex = max((int)(*nearestIndex) - 1, 0);
+	int hiIndex = min((int)(*nearestIndex) + 1, int(inOutline.size() - 1));
+	if (hiIndex - loIndex > 1) {
+		
+		// Determine which side of the nearest index is closest
+		
+		// find test length
+		float lengthAtNearestIndex = inOutline.getLengthAtIndex(*nearestIndex);
+		float loTestLength = lengthAtNearestIndex - inOutline.getPerimeter() / 100.0; // 1000?
+		float hiTestLength = lengthAtNearestIndex + inOutline.getPerimeter() / 100.0;
+
+		// find the distance to the points at these test lengths
+		float loDist = glm::distance(outPoint, inOutline.getPointAtLength(loTestLength));
+		float hiDist = glm::distance(outPoint, inOutline.getPointAtLength(hiTestLength));
+
+		if (loDist <= hiDist) {
+			// loIndex is correct
+			hiIndex = *nearestIndex;
+		}
+		else {
+			loIndex = *nearestIndex;
+			// hiIndex is correct
+		}
+	}
+	// Interpolate the closestPoint between the vertices at each of these indices
+	float distLoToClosest = glm::distance(inOutline.getVertices()[loIndex], outPoint);
+	float distLoToHi = glm::distance(inOutline.getVertices()[loIndex], inOutline.getVertices()[hiIndex]);
+	float param = distLoToHi < 0.000001 ? 0.0 : CLAMP(distLoToClosest / distLoToHi, 0.0, 1.0);
+	// Calculate the interpolated index
+	outIndexInterp = float(loIndex) + param;
+
+	// Calculate the overall percent (param along the whole line)
+	outPercent = inOutline.getLengthAtIndexInterpolated(outIndexInterp) / inOutline.getPerimeter();
+}
+
+// --------------------------------------------------------------
+
+ofMesh ofxSubstrateMapper::getSurface() {
+	return surface;
+}
+
+// --------------------------------------------------------------
+ofMesh* ofxSubstrateMapper::getSurfacePtr() {
+	return &surface;
+}
+
+// --------------------------------------------------------------
+
+
+// --------------------------------------------------------------
+
+
+// --------------------------------------------------------------
+
 
 // --------------------------------------------------------------
 

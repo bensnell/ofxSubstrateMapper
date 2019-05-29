@@ -22,5 +22,10 @@ class ofApp: public ofBaseApp{
 		void gotMessage(ofMessage msg);
     
     ofxSubstrateMapper mapper;
+
+	ofEasyCam cam;
+	ofLight light;
+
+
     
 };
