@@ -16,7 +16,6 @@ void ofxSubstrateMapper::setupParams() {
 	RUI_NEW_GROUP("Substrate Mapper");
 	RUI_SHARE_PARAM_WCN("SMap: Substrate Plan Filename", spFilename);
 
-
 }
 
 // --------------------------------------------------------------

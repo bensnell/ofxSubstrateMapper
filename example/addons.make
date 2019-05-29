@@ -1,4 +1,5 @@
 ofxOsc
 ofxPoco
+ofxRemoteUI
+ofxSubstrateMapper
 ofxXmlSettings
-../../../ExternalAddons/ofxRemoteUI

@@ -21,7 +21,10 @@ public:
 	void setup();
 
 	// Update this tool with the tool center point used for calibration
-	void update();
+//    void update();
+    
+    glm::vec3 getSurfacePoint(glm::vec3 point);
+    glm::vec2 getSurfaceParam(glm::vec3 point);
 
 	void loadSubstratePlan(string _spFilename = "");
 	bool isSubstratePlanLoaded();
@@ -37,5 +40,8 @@ private:
 
 	// Json helper
 	ofJson js;
+    
+    glm::vec3 lastSurfacePoint;
+    glm::vec2 lastSurfaceParam;
 
 };

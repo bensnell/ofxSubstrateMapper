@@ -9,15 +9,25 @@ void ofApp::setup() {
 	// Setup params 
 	RUI_SETUP();
     // load params
-    
+    mapper.setupParams();
 	RUI_LOAD_FROM_XML();
 
     // setup the mapper
+    mapper.setup();
 
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+    
+    // Get the 3D point
+    glm::vec3 pt = glm::vec3(0.5, 0.5, 0.5);
+    
+    // Map this 3D point to the chosen surface
+    glm::vec3 ptMapped = mapper.getSurfacePoint(pt);
+    glm::vec2 ptParams = mapper.getSurfaceParams(pt);
+    
+    
 
 }
 
@@ -26,7 +36,8 @@ void ofApp::draw(){
 
 	ofBackground(200);
 
-
+    mapper.drawDebug();
+    
 }
 
 //--------------------------------------------------------------
