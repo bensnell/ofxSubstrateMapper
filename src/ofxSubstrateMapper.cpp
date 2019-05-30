@@ -213,12 +213,19 @@ void ofxSubstrateMapper::render() {
 	canvas.begin();
 	
 	ofPushMatrix();
+	ofEnableAlphaBlending();
+
+	ofSetColor(255, 255, 255, 10);
+	ofDrawRectangle(0, 0, canvas.getWidth(), canvas.getHeight());
+
 	ofSetColor(255, 0, 0, 255);
 	ofDrawCircle(lastOutParam[0] * float(canvas.getWidth()), lastOutParam[1] * float(canvas.getHeight()), maxRenderingDimension/100);
 	ofSetColor(255, 255, 255, 255);
+	
+	ofDisableAlphaBlending();
 	ofPopMatrix();
 
-	//ofClearAlpha();
+	ofClearAlpha();
 	canvas.end();
 
 }
@@ -244,6 +251,16 @@ void ofxSubstrateMapper::drawDebug(int x, int y) {
 	ofPopStyle();
 	ofPopMatrix();
 
+}
+
+// --------------------------------------------------------------
+void ofxSubstrateMapper::drawDebugImagery(int x, int y, int w, int h) {
+	
+	//canvas.draw(0, 0, w, h);
+
+	canvas.getTexture().bind();
+	canvas.getTexture().draw(x, y, w, h);
+	canvas.getTexture().unbind();
 }
 
 // --------------------------------------------------------------

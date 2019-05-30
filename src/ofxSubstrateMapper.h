@@ -41,6 +41,7 @@ public:
 	bool isSubstratePlanLoaded();
 
 	void drawDebug(int x = 0, int y = 0);
+	void drawDebugImagery(int x, int y, int w, int h);
 
 	ofMesh getSurface();
 	ofMesh* getSurfacePtr();
