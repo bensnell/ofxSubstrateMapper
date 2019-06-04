@@ -46,7 +46,7 @@ public:
 	ofMesh getSurface();
 	ofMesh* getSurfacePtr();
 
-	void render();
+	void renderDebug();
 
 protected:
 

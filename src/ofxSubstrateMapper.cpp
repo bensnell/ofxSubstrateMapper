@@ -207,7 +207,7 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 }
 
 // --------------------------------------------------------------
-void ofxSubstrateMapper::render() {
+void ofxSubstrateMapper::renderDebug() {
 
 	// Render the last target
 	canvas.begin();
