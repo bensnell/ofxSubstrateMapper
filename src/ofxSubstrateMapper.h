@@ -6,7 +6,15 @@
 // The Substrate Plan contains geometric information defining the projection surface in a json format
 // with extension .plan :
 // (1) key "substrate_outline" corresponds to a list of real space XY plane vertices defining the
-// projection surface from a top-down view
+// projection surface from a top-down view. The coordinates should be listed as such:
+//	 
+//																		A
+//	0		1		2		3		4									| negative distance away
+//	* ---->	* ---->	* ---->	* ---->	*		surface definition			-
+//																		| positive distance away
+//			   *														V
+//			   ^ test point 
+//
 // (2) key "substrate_heights" corresponds to a list of low and high heights at normalized
 // parameters along the outline
 
@@ -35,7 +43,7 @@ public:
 	// This returns all of the following
 	//void getNearest(glm::vec3 inPoint, glm::vec3& outPoint, glm::vec2& outParam, glm::vec3& outDirection);
 	//void getNearest(glm::vec3 inPoint, glm::mat4x4& outFrame, glm::vec2& outParam);
-	void getNearest(glm::vec3 inPoint, glm::vec3& outPoint, glm::vec2& outParam);
+	void getNearest(glm::vec3 inPoint, glm::vec3& outPoint, glm::vec2& outParam, float& outDist);
 
 	void loadSubstratePlan(string _spFilename = "");
 	bool isSubstratePlanLoaded();
@@ -66,6 +74,7 @@ protected:
 	glm::vec3 lastInPoint;
     glm::vec3 lastOutPoint;
     glm::vec2 lastOutParam;
+	float lastOutDist;
 
 	glm::vec2 getInterpolatedHeight(vector<HeightParam>* heights, float param);
 
