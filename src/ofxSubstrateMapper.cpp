@@ -219,7 +219,7 @@ void ofxSubstrateMapper::renderDebug() {
 	ofDrawRectangle(0, 0, canvas.getWidth(), canvas.getHeight());
 
 	ofSetColor(255, 0, 0, 255);
-	ofDrawCircle(lastOutParam[0] * float(canvas.getWidth()), lastOutParam[1] * float(canvas.getHeight()), maxRenderingDimension/100);
+	ofDrawCircle(lastMapping.srfUVClamped[0] * float(canvas.getWidth()), lastMapping.srfUVClamped[1] * float(canvas.getHeight()), maxRenderingDimension/100);
 	ofSetColor(255, 255, 255, 255);
 	
 	ofDisableAlphaBlending();
@@ -292,39 +292,40 @@ glm::vec2 ofxSubstrateMapper::getInterpolatedHeight(vector<HeightParam>* heights
 }
 
 // --------------------------------------------------------------
-void ofxSubstrateMapper::getNearest(glm::vec3 inPoint, glm::vec3& outPoint, glm::vec2& outParam, float& outDist) {
-	if (!isSubstratePlanLoaded()) return;
+MappingResult ofxSubstrateMapper::getNearest(glm::vec3 inPoint) {
+	MappingResult m;
+	if (!isSubstratePlanLoaded()) return m;
+	m.bValid = true;
+	m.refPoint = inPoint;
+	m.timestamp = ofGetElapsedTimeMicros();
 
 	// Find the closest point on the outline
 	float percent;
 	float indexInterp;
-	getClosestPoint(inPoint, outline, outPoint, percent, indexInterp);
+	getClosestPoint(inPoint, outline, m.srfPoint, percent, indexInterp);
 	// ^ only the x,y coordinates matter here, since the outline is in 2D
 	// Set the U param
-	outParam[0] = percent;
+	m.srfUVClamped[0] = percent;
 
 	// Now, find the height
 	glm::vec2 heightBounds = getInterpolatedHeight(&heights, percent);
 	float z = CLAMP(inPoint.z, heightBounds[0], heightBounds[1]);
 	// Set the height
-	outPoint.z = z;
+	m.srfPoint.z = z;
 	// Set the V param
-	outParam[1] = ofMap(inPoint.z, heightBounds[0], heightBounds[1], 0.0, 1.0, true);
+	m.srfUVClamped[1] = ofMap(inPoint.z, heightBounds[0], heightBounds[1], 0.0, 1.0, true);
 	
 	// Set the distance away, where negative indicates behind the surface
 	// First find the tangent
-	//int loIndex = floor(indexInterp);
-	//int hiIndex = CLAMP(loIndex + 1, 0, outline.size()-1);
-	//if (loIndex = hiIndex) loIndex = hiIndex - 1;
-	//glm::vec3 positiveDirection = glm::normalize(glm::cross(outline.getVertices()[hiIndex] - outline.getVertices()[loIndex], glm::vec3(0, 0, 1))); // assumes +z up vector
-	//outDist = glm::distance(inPoint, outPoint);
-	//if (glm::dot(positiveDirection, outPoint - inPoint) < 0) outDist = -outDist;
+	int loIndex = floor(indexInterp);
+	int hiIndex = CLAMP(loIndex + 1, 0, outline.size()-1);
+	if (loIndex = hiIndex) loIndex = hiIndex - 1;
+	glm::vec3 positiveDirection = glm::normalize(glm::cross(outline.getVertices()[hiIndex] - outline.getVertices()[loIndex], glm::vec3(0, 0, 1))); // assumes +z up vector
+	m.distance = glm::distance(inPoint, m.srfPoint);
+	if (glm::dot(positiveDirection, inPoint - m.srfPoint) < 0) m.distance = -m.distance;
 
-
-	lastInPoint = inPoint;
-	lastOutPoint = outPoint;
-	lastOutParam = outParam;
-	lastOutDist = outDist;
+	lastMapping = m;
+	return m;
 }
 
 // --------------------------------------------------------------
