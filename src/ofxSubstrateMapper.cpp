@@ -44,11 +44,11 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 		return;
 	}
 	file >> js;
-	if (!js.contains("substrate_outline")) {
+	if (js.find("substrate_outline") == js.end()) {  //!js.contains("substrate_outline")) {
 		ofLogError("ofxSubstrateMapper") << "Substrate Plan " << spFilename << " does not contain key substrate_outline. Exiting.";
 		return;
 	}
-	if (!js.contains("substrate_heights")) {
+	if (js.find("substrate_heights") == js.end()) {  //!js.contains("substrate_heights")) {
 		ofLogError("ofxSubstrateMapper") << "Substrate Plan " << spFilename << " does not contain key substrate_heights. Exiting.";
 		return;
 	}
@@ -67,7 +67,7 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 		}
 	}
     for (int i = 0; i < js["substrate_heights"].size(); i++) {
-        if (!js["substrate_heights"][i].contains("param")) {
+        if (js["substrate_heights"][i].find("param") == js["substrate_heights"][i].end()) {  //!js["substrate_heights"][i].contains("param")) {
 			ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"param\"";
             return;
         }
@@ -75,12 +75,12 @@ void ofxSubstrateMapper::loadSubstratePlan(string _spFilename) {
 			ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be listed in increasing order.";
             return;
         }
-        if (js["substrate_heights"][i]["param"] < 0.0 || js["substrate_heights"][i]["param"] > 1.0) {
+        if (float(js["substrate_heights"][i]["param"]) < 0.0 || float(js["substrate_heights"][i]["param"]) > 1.0) {
 			ofLogError("ofxSubstrateMapper") << "Parameters in substrate_heights in the Substrate Plan file must be between 0 and 1.";
             return;
         }
         
-        if (!js["substrate_heights"][i].contains("bounds")) {
+        if (js["substrate_heights"][i].find("bounds") == js["substrate_heights"][i].end()) {  //!js["substrate_heights"][i].contains("bounds")) {
 			ofLogError("ofxSubstrateMapper") << "Each entry in substrate_heights in the Substrate Plan file must contain the key \"bounds\"";
             return;
         }
