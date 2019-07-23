@@ -37,9 +37,7 @@ void ofApp::update(){
     glm::vec3 pt = glm::vec3(0, float(ofGetMouseX())/float(ofGetWidth()), 1.0 - float(ofGetMouseY())/float(ofGetHeight()));
     
     // Map this 3D point to the chosen surface
-	glm::vec3 closestPoint;
-	glm::vec2 surfaceParam;
-	mapper.getNearest(pt, closestPoint, surfaceParam);
+	MappingResult result = mapper.getNearest(pt);
 }
 
 //--------------------------------------------------------------
@@ -47,7 +45,7 @@ void ofApp::draw(){
 
 	ofBackground(255);
 
-	mapper.render();
+	mapper.renderDebug();
 
 	cam.begin();
 	ofEnableDepthTest();
