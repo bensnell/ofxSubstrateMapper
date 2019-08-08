@@ -231,12 +231,12 @@ void ofxSubstrateMapper::renderDebug() {
 }
 
 // --------------------------------------------------------------
-void ofxSubstrateMapper::drawDebug(int x, int y) {
-    if (!isSubstratePlanLoaded()) return;
+void ofxSubstrateMapper::drawDebug(int x, int y, ofTexture& _canvas) {
+	if (!isSubstratePlanLoaded()) return;
 
 	ofPushMatrix();
 	ofPushStyle();
-	
+
 	ofEnableNormalizedTexCoords();
 	//ofDisableArbTex();
 
@@ -252,7 +252,11 @@ void ofxSubstrateMapper::drawDebug(int x, int y) {
 
 	ofPopStyle();
 	ofPopMatrix();
+}
 
+// --------------------------------------------------------------
+void ofxSubstrateMapper::drawDebug(int x, int y) {
+	drawDebug(x, y, canvas.getTexture());
 }
 
 // --------------------------------------------------------------
@@ -384,7 +388,9 @@ ofMesh* ofxSubstrateMapper::getSurfacePtr() {
 }
 
 // --------------------------------------------------------------
-
+string ofxSubstrateMapper::getSubstratePlanName() {
+	return spFilename;
+}
 
 // --------------------------------------------------------------
 

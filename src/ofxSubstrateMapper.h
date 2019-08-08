@@ -82,11 +82,14 @@ public:
 
 	void drawDebug(int x = 0, int y = 0);
 	void drawDebugImagery(int x, int y, int w, int h);
+	void drawDebug(int x, int y, ofTexture& _canvas);
 
 	ofMesh getSurface();
 	ofMesh* getSurfacePtr();
 
 	void renderDebug();
+
+	string getSubstratePlanName();
 
 protected:
 
