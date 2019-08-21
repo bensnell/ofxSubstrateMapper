@@ -296,6 +296,33 @@ glm::vec2 ofxSubstrateMapper::getInterpolatedHeight(vector<HeightParam>* heights
 }
 
 // --------------------------------------------------------------
+glm::vec3 ofxSubstrateMapper::getBackprojected(glm::vec2 _srfUVClamped, float _distance) {
+	if (!isSubstratePlanLoaded()) return glm::vec3(0, 0, 0);
+
+	_srfUVClamped[0] = CLAMP(_srfUVClamped[0], 0.0, 1.0);
+	_srfUVClamped[1] = CLAMP(_srfUVClamped[1], 0.0, 1.0);
+	// ^ may need to be flipped
+
+	// Find the xy point on the outline
+	float indexInterp = outline.getIndexAtPercent(_srfUVClamped[0]);
+	glm::vec2 linePoint = outline.getPointAtIndexInterpolated(indexInterp);
+	// Get the height bounds
+	glm::vec2 heightBounds = getInterpolatedHeight(&heights, _srfUVClamped[0]);
+	glm::vec3 srfPoint = glm::vec3(
+		linePoint.x, 
+		linePoint.y, 
+		ofMap(_srfUVClamped[1], 0.0, 1.0, heightBounds[0], heightBounds[1], true));
+	// Offset this point
+	float samplingRadius = outline.getPerimeter() / 1000.0;
+	glm::vec2 loPt = outline.getPointAtIndexInterpolated(indexInterp - samplingRadius);
+	glm::vec2 hiPt = outline.getPointAtIndexInterpolated(indexInterp + samplingRadius);
+	glm::vec2 tangent = glm::normalize(hiPt - loPt);
+	glm::vec3 tanDir = glm::vec3(tangent.x, tangent.y, 0);
+	glm::vec3 posOutDir = glm::normalize(glm::cross(tanDir, glm::vec3(0, 0, 1)));
+	return srfPoint + posOutDir * _distance;
+}
+
+// --------------------------------------------------------------
 MappingResult ofxSubstrateMapper::getNearest(glm::vec3 inPoint) {
 	MappingResult m;
 	if (!isSubstratePlanLoaded()) return m;

@@ -77,6 +77,10 @@ public:
 	//void getNearest(glm::vec3 inPoint, glm::mat4x4& outFrame, glm::vec2& outParam);
 	MappingResult getNearest(glm::vec3 inPoint);
 
+	// Inverse Nearest Mapping -- get a point for a surface mapping
+	glm::vec3 getBackprojected(glm::vec2 _srfUVClamped, float _distance);
+	
+
 	void loadSubstratePlan(string _spFilename = "");
 	bool isSubstratePlanLoaded();
 
