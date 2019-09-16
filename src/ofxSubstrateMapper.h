@@ -117,4 +117,11 @@ protected:
 	void getClosestPoint(glm::vec3& inPoint, ofPolyline& inOutline, glm::vec3& outPoint, float& outPercent, float &outIndexInterp);
 
 	int maxRenderingDimension = 1000; // px
+
+	// UV Clamping Params
+	// Sometimes, it is useful to return the srfUVClamped in a different range (>0 and <1)
+	float ULoBound = 0;
+	float UHiBound = 1;
+	float VLoBound = 0;
+	float VHiBound = 1;
 };

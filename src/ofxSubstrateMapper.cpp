@@ -15,6 +15,11 @@ void ofxSubstrateMapper::setupParams() {
 
 	RUI_NEW_GROUP("Substrate Mapper");
 	RUI_SHARE_PARAM_WCN("SMap: Substrate Plan Filename", spFilename);
+	RUI_SHARE_PARAM_WCN("SMap: U Lo Bound", ULoBound, 0, 1);
+	RUI_SHARE_PARAM_WCN("SMap: U Hi Bound", UHiBound, 0, 1);
+	RUI_SHARE_PARAM_WCN("SMap: V Lo Bound", VLoBound, 0, 1);
+	RUI_SHARE_PARAM_WCN("SMap: V Hi Bound", VHiBound, 0, 1);
+
 
 }
 
@@ -354,6 +359,10 @@ MappingResult ofxSubstrateMapper::getNearest(glm::vec3 inPoint) {
 	glm::vec3 positiveDirection = glm::normalize(glm::cross(outline.getVertices()[hiIndex] - outline.getVertices()[loIndex], glm::vec3(0, 0, 1))); // assumes +z up vector
 	m.distance = glm::distance(inPoint, m.srfPoint);
 	if (glm::dot(positiveDirection, inPoint - m.srfPoint) < 0) m.distance = -m.distance;
+
+	// Clamp the output if this functionality is desired
+	m.srfUVClamped[0] = ofMap(m.srfUVClamped[0], ULoBound, UHiBound, 0, 1, true);
+	m.srfUVClamped[1] = ofMap(m.srfUVClamped[1], VLoBound, VHiBound, 0, 1, true);
 
 	lastMapping = m;
 	return m;
