@@ -361,8 +361,8 @@ MappingResult ofxSubstrateMapper::getNearest(glm::vec3 inPoint) {
 	if (glm::dot(positiveDirection, inPoint - m.srfPoint) < 0) m.distance = -m.distance;
 
 	// Clamp the output if this functionality is desired
-	m.srfUVClamped[0] = ofMap(m.srfUVClamped[0], ULoBound, UHiBound, 0, 1, true);
-	m.srfUVClamped[1] = ofMap(m.srfUVClamped[1], VLoBound, VHiBound, 0, 1, true);
+	m.srfUVClamped[0] = ofMap(m.srfUVClamped[0], 0, 1, ULoBound, UHiBound); // clamping?
+	m.srfUVClamped[1] = ofMap(m.srfUVClamped[1], 0, 1, VLoBound, VHiBound); // clamping?
 
 	lastMapping = m;
 	return m;
