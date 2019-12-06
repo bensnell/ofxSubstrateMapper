@@ -15,10 +15,10 @@ void ofxSubstrateMapper::setupParams() {
 
 	RUI_NEW_GROUP("Substrate Mapper");
 	RUI_SHARE_PARAM_WCN("SMap: Substrate Plan Filename", spFilename);
-	RUI_SHARE_PARAM_WCN("SMap: U Lo Bound", ULoBound, 0, 1);
-	RUI_SHARE_PARAM_WCN("SMap: U Hi Bound", UHiBound, 0, 1);
-	RUI_SHARE_PARAM_WCN("SMap: V Lo Bound", VLoBound, 0, 1);
-	RUI_SHARE_PARAM_WCN("SMap: V Hi Bound", VHiBound, 0, 1);
+	RUI_SHARE_PARAM_WCN("SMap: U Lo Bound", ULoBound, -1, 1);
+	RUI_SHARE_PARAM_WCN("SMap: U Hi Bound", UHiBound, 0, 2);
+	RUI_SHARE_PARAM_WCN("SMap: V Lo Bound", VLoBound, -1, 1);
+	RUI_SHARE_PARAM_WCN("SMap: V Hi Bound", VHiBound, 0, 2);
 
 
 }
